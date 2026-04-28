@@ -1,0 +1,43 @@
+{
+  "$schema": "https://app.clawnify.com/schema/v1/clawnify.json",
+  "version": 1,
+  "name": "Open Dentist",
+  "description": "Open-source dental practice management software — an alternative to CareStack and Archy. Multi-room agenda scheduling, patient records with tooth charting, treatment planning, clinical notes, and billing. Built for solo practices, group practices, and DSOs.",
+  "icon": "icon.svg",
+  "tags": ["dental", "healthcare", "practice-management", "scheduling", "patients"],
+  "app": {
+    "framework": "react+hono",
+    "database": true,
+    "storage": false
+  },
+  "deploy": {
+    "title": "Deploy your dental practice management",
+    "subtitle": "Like CareStack or Archy — set up in minutes",
+    "prompts": [
+      {
+        "key": "practice_name",
+        "label": "Practice name",
+        "placeholder": "e.g. Smile Dental",
+        "required": true
+      },
+      {
+        "key": "operatories",
+        "label": "How many operatories (treatment rooms)?",
+        "placeholder": "e.g. 4",
+        "required": true
+      },
+      {
+        "key": "practitioners",
+        "label": "Who works there?",
+        "type": "textarea",
+        "placeholder": "e.g. Dr. Lee (general), Dr. Patel (ortho), Sarah (hygienist)..."
+      },
+      {
+        "key": "details",
+        "label": "Anything else?",
+        "type": "textarea",
+        "placeholder": "Working hours, common procedures, brand colors, special features..."
+      }
+    ]
+  }
+}

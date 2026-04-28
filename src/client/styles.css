@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Color tokens for appointment cards / badges referenced dynamically. Keeping
+   them in @source ensures Tailwind emits utilities even though class names are
+   composed at runtime. */
+@source inline("{bg,text,ring,border}-{sky,rose,amber,emerald,violet,fuchsia,teal,orange,slate}-{50,100,200,300,400,500,600,700,800}");
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: oklch(0.99 0.005 200);
+  --foreground: oklch(0.18 0.02 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 240);
+  --primary: oklch(0.55 0.13 195);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.01 200);
+  --secondary-foreground: oklch(0.22 0.03 240);
+  --muted: oklch(0.96 0.005 220);
+  --muted-foreground: oklch(0.52 0.02 240);
+  --accent: oklch(0.94 0.02 195);
+  --accent-foreground: oklch(0.22 0.06 195);
+  --destructive: oklch(0.6 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.91 0.01 220);
+  --input: oklch(0.91 0.01 220);
+  --ring: oklch(0.55 0.13 195);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0.005 200);
+  --sidebar-foreground: oklch(0.22 0.02 240);
+  --sidebar-accent: oklch(0.94 0.03 195);
+  --sidebar-accent-foreground: oklch(0.3 0.1 195);
+  --sidebar-border: oklch(0.91 0.01 220);
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Striped pattern used for past/closed time slots in the agenda */
+.agenda-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0,
+    transparent 8px,
+    rgb(0 0 0 / 0.03) 8px,
+    rgb(0 0 0 / 0.03) 9px
+  );
+}
+
+/* react-odontogram: suppress the browser focus ring on tooth <g> elements.
+   The library renders its own selection/hover feedback, so the native outline
+   creates a double-highlight (the macOS-style blue square). */
+.odontogram-host :focus,
+.odontogram-host :focus-visible,
+.odontogram-host svg g:focus,
+.odontogram-host svg g:focus-visible {
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
