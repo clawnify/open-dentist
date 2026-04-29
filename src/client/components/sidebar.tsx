@@ -4,9 +4,7 @@ import {
   Settings,
   Stethoscope,
   FileBarChart2,
-  UserCog,
-  CalendarClock,
-  DollarSign,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Route } from "@/hooks/use-router";
@@ -23,18 +21,16 @@ const sections: { heading: string; items: NavItem[] }[] = [
   {
     heading: "Practice",
     items: [
-      { label: "Agenda",   icon: Calendar, path: "/agenda",   match: (r) => r.name === "agenda" },
-      { label: "Patients", icon: Users,    path: "/patients", match: (r) => r.name === "patients" || r.name === "patient" },
+      { label: "Agenda",     icon: Calendar,      path: "/agenda",   match: (r) => r.name === "agenda" },
+      { label: "Patients",   icon: Users,         path: "/patients", match: (r) => r.name === "patients" || r.name === "patient" },
+      { label: "Lab cases",  icon: FlaskConical,  path: "/lab",      match: (r) => r.name === "lab" },
     ],
   },
   {
     heading: "Admin",
     items: [
-      { label: "Reports",     icon: FileBarChart2, disabled: true },
-      { label: "Staff",       icon: UserCog,       disabled: true },
-      { label: "Schedule",    icon: CalendarClock, disabled: true },
-      { label: "Billing",     icon: DollarSign,    disabled: true },
-      { label: "Settings",    icon: Settings,      path: "/settings", match: (r) => r.name === "settings" },
+      { label: "Reports",  icon: FileBarChart2, path: "/reports",  match: (r) => r.name === "reports" },
+      { label: "Settings", icon: Settings,      path: "/settings", match: (r) => r.name === "settings" },
     ],
   },
 ];

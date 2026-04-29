@@ -5,6 +5,7 @@ import type { Appointment } from "@/types";
 import { DayToolbar } from "./day-toolbar";
 import { DayGrid } from "./day-grid";
 import { AppointmentDialog } from "./appointment-dialog";
+import { AgendaSidePanel } from "./side-panel";
 
 export function AgendaPage() {
   const app = useApp();
@@ -36,15 +37,18 @@ export function AgendaPage() {
   }
 
   return (
-    <>
-      <DayToolbar date={date} onChange={setDate} onCreate={() => openCreate()} />
-      <DayGrid
-        date={date}
-        operatories={app.operatories}
-        appointments={app.appointments}
-        onSlotClick={(opId, min) => openCreate(opId, min)}
-        onAppointmentClick={openEdit}
-      />
+    <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <DayToolbar date={date} onChange={setDate} onCreate={() => openCreate()} />
+        <DayGrid
+          date={date}
+          operatories={app.operatories}
+          appointments={app.appointments}
+          onSlotClick={(opId, min) => openCreate(opId, min)}
+          onAppointmentClick={openEdit}
+        />
+      </div>
+      <AgendaSidePanel />
       <AppointmentDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -52,6 +56,6 @@ export function AgendaPage() {
         date={date}
         defaults={defaults}
       />
-    </>
+    </div>
   );
 }

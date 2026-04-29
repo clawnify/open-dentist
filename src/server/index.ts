@@ -200,6 +200,7 @@ const PatientInput = z.object({
   address: z.string().optional().nullable(),
   medical_alerts: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  referral_source: z.string().optional().nullable(),
 });
 
 app.get("/api/patients", async (c) => {
@@ -229,8 +230,8 @@ app.post("/api/patients", async (c) => {
   if (!parsed.ok) return c.json({ error: parsed.error }, 400);
   const d = parsed.data;
   const result = await run(
-    "INSERT INTO patients (first_name, last_name, date_of_birth, email, phone, address, medical_alerts, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    [d.first_name, d.last_name, d.date_of_birth ?? null, d.email ?? null, d.phone ?? null, d.address ?? null, d.medical_alerts ?? null, d.notes ?? null],
+    "INSERT INTO patients (first_name, last_name, date_of_birth, email, phone, address, medical_alerts, notes, referral_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [d.first_name, d.last_name, d.date_of_birth ?? null, d.email ?? null, d.phone ?? null, d.address ?? null, d.medical_alerts ?? null, d.notes ?? null, d.referral_source ?? null],
   );
   const row = await get("SELECT * FROM patients WHERE id = ?", [result.lastInsertRowid]);
   return c.json({ patient: row }, 201);
@@ -691,6 +692,308 @@ app.delete("/api/appointments-to-make/:id", async (c) => {
   const r = await run("DELETE FROM appointments_to_make WHERE id = ?", [id]);
   if (!r.changes) return c.json({ error: "Not found" }, 404);
   return c.json({ ok: true });
+});
+
+// ── Insurance plans ────────────────────────────────────────────────
+
+const InsurancePlanInput = z.object({
+  patient_id: z.number().int(),
+  rank: z.enum(["primary", "secondary", "tertiary"]).optional(),
+  carrier: z.string().min(1),
+  member_id: z.string().optional().nullable(),
+  group_id: z.string().optional().nullable(),
+  subscriber_name: z.string().optional().nullable(),
+  subscriber_dob: z.string().optional().nullable(),
+  effective_date: z.string().optional().nullable(),
+  term_date: z.string().optional().nullable(),
+  copay: z.number().min(0).optional(),
+  deductible_total: z.number().min(0).optional(),
+  deductible_used: z.number().min(0).optional(),
+  max_annual: z.number().min(0).optional(),
+  max_used: z.number().min(0).optional(),
+  notes: z.string().optional().nullable(),
+});
+
+app.get("/api/patients/:id/insurance", async (c) => {
+  const id = intParam(c.req.param("id"));
+  if (!id) return c.json({ error: "Invalid ID" }, 400);
+  // Fall back to [] if the table doesn't exist yet (pre-migration dev DB).
+  const rows = await query(
+    "SELECT * FROM insurance_plans WHERE patient_id = ? ORDER BY CASE rank WHEN 'primary' THEN 0 WHEN 'secondary' THEN 1 ELSE 2 END",
+    [id],
+  ).catch(() => []);
+  return c.json({ plans: rows });
+});
+
+app.post("/api/insurance-plans", async (c) => {
+  const parsed = await parseJson(c, InsurancePlanInput);
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  const d = parsed.data;
+  const result = await run(
+    `INSERT INTO insurance_plans
+       (patient_id, rank, carrier, member_id, group_id, subscriber_name, subscriber_dob,
+        effective_date, term_date, copay, deductible_total, deductible_used, max_annual, max_used, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      d.patient_id, d.rank ?? "primary", d.carrier,
+      d.member_id ?? null, d.group_id ?? null, d.subscriber_name ?? null, d.subscriber_dob ?? null,
+      d.effective_date ?? null, d.term_date ?? null,
+      d.copay ?? 0, d.deductible_total ?? 0, d.deductible_used ?? 0, d.max_annual ?? 0, d.max_used ?? 0,
+      d.notes ?? null,
+    ],
+  );
+  const row = await get("SELECT * FROM insurance_plans WHERE id = ?", [result.lastInsertRowid]);
+  return c.json({ plan: row }, 201);
+});
+
+app.put("/api/insurance-plans/:id", async (c) => {
+  const id = intParam(c.req.param("id"));
+  if (!id) return c.json({ error: "Invalid ID" }, 400);
+  const parsed = await parseJson(c, InsurancePlanInput.partial());
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  for (const [k, v] of Object.entries(parsed.data)) {
+    if (v !== undefined) { sets.push(`${k} = ?`); params.push(v); }
+  }
+  if (!sets.length) return c.json({ error: "No fields" }, 400);
+  params.push(id);
+  const r = await run(`UPDATE insurance_plans SET ${sets.join(", ")} WHERE id = ?`, params);
+  if (!r.changes) return c.json({ error: "Not found" }, 404);
+  const row = await get("SELECT * FROM insurance_plans WHERE id = ?", [id]);
+  return c.json({ plan: row });
+});
+
+app.delete("/api/insurance-plans/:id", async (c) => {
+  const id = intParam(c.req.param("id"));
+  if (!id) return c.json({ error: "Invalid ID" }, 400);
+  const r = await run("DELETE FROM insurance_plans WHERE id = ?", [id]);
+  if (!r.changes) return c.json({ error: "Not found" }, 404);
+  return c.json({ ok: true });
+});
+
+// ── Lab cases ─────────────────────────────────────────────────────
+
+const LabCaseInput = z.object({
+  patient_id: z.number().int(),
+  practitioner_id: z.number().int().nullable().optional(),
+  treatment_type_id: z.number().int().nullable().optional(),
+  lab_name: z.string().min(1),
+  case_type: z.string().min(1),
+  tooth: z.string().optional().nullable(),
+  shade: z.string().optional().nullable(),
+  fee: z.number().min(0).optional(),
+  sent_at: z.string().optional().nullable(),
+  due_at: z.string().optional().nullable(),
+  received_at: z.string().optional().nullable(),
+  seated_at: z.string().optional().nullable(),
+  status: z.enum(["sent", "in_lab", "received", "seated", "cancelled"]).optional(),
+  notes: z.string().optional().nullable(),
+});
+
+const LAB_SELECT = `
+  SELECT lc.*,
+    p.first_name, p.last_name,
+    pr.name as practitioner_name,
+    tt.code as treatment_code, tt.name as treatment_name
+  FROM lab_cases lc
+  LEFT JOIN patients p ON p.id = lc.patient_id
+  LEFT JOIN practitioners pr ON pr.id = lc.practitioner_id
+  LEFT JOIN treatment_types tt ON tt.id = lc.treatment_type_id
+`;
+
+app.get("/api/lab-cases", async (c) => {
+  const status = c.req.query("status");
+  const where = status ? "WHERE lc.status = ?" : "";
+  const params = status ? [status] : [];
+  // Fall back to [] if the table doesn't exist yet (pre-migration dev DB).
+  const rows = await query(`${LAB_SELECT} ${where} ORDER BY lc.due_at ASC, lc.id DESC`, params)
+    .catch(() => []);
+  return c.json({ cases: rows });
+});
+
+app.post("/api/lab-cases", async (c) => {
+  const parsed = await parseJson(c, LabCaseInput);
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  const d = parsed.data;
+  const result = await run(
+    `INSERT INTO lab_cases
+       (patient_id, practitioner_id, treatment_type_id, lab_name, case_type, tooth, shade, fee,
+        sent_at, due_at, received_at, seated_at, status, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      d.patient_id, d.practitioner_id ?? null, d.treatment_type_id ?? null,
+      d.lab_name, d.case_type, d.tooth ?? null, d.shade ?? null, d.fee ?? 0,
+      d.sent_at ?? null, d.due_at ?? null, d.received_at ?? null, d.seated_at ?? null,
+      d.status ?? "sent", d.notes ?? null,
+    ],
+  );
+  const row = await get(`${LAB_SELECT} WHERE lc.id = ?`, [result.lastInsertRowid]);
+  return c.json({ case: row }, 201);
+});
+
+app.put("/api/lab-cases/:id", async (c) => {
+  const id = intParam(c.req.param("id"));
+  if (!id) return c.json({ error: "Invalid ID" }, 400);
+  const parsed = await parseJson(c, LabCaseInput.partial());
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  for (const [k, v] of Object.entries(parsed.data)) {
+    if (v !== undefined) { sets.push(`${k} = ?`); params.push(v); }
+  }
+  if (!sets.length) return c.json({ error: "No fields" }, 400);
+  params.push(id);
+  const r = await run(`UPDATE lab_cases SET ${sets.join(", ")} WHERE id = ?`, params);
+  if (!r.changes) return c.json({ error: "Not found" }, 404);
+  const row = await get(`${LAB_SELECT} WHERE lc.id = ?`, [id]);
+  return c.json({ case: row });
+});
+
+app.delete("/api/lab-cases/:id", async (c) => {
+  const id = intParam(c.req.param("id"));
+  if (!id) return c.json({ error: "Invalid ID" }, 400);
+  const r = await run("DELETE FROM lab_cases WHERE id = ?", [id]);
+  if (!r.changes) return c.json({ error: "Not found" }, 404);
+  return c.json({ ok: true });
+});
+
+// ── Reports ───────────────────────────────────────────────────────
+
+app.get("/api/reports/summary", async (c) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const startOfMonth = `${today.slice(0, 8)}01`;
+  const startOfWeek = (() => {
+    const d = new Date(`${today}T00:00:00`);
+    const dow = d.getDay();
+    const diff = (dow + 6) % 7; // make Monday the start
+    d.setDate(d.getDate() - diff);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  // Per-query .catch so a missing table/column on a partially-migrated dev DB
+  // doesn't take down the whole report.
+  const safeGet = <T,>(sql: string, params: unknown[] = [], fallback: T) =>
+    get<T>(sql, params).catch(() => fallback as T | undefined).then((v) => v ?? fallback);
+  const safeQuery = <T,>(sql: string, params: unknown[] = []): Promise<T[]> =>
+    query<T>(sql, params).catch(() => [] as T[]);
+
+  const [
+    todayAppts,
+    weekAppts,
+    monthAppts,
+    monthCompleted,
+    monthNoShows,
+    monthCancelled,
+    byTreatmentRows,
+    bySourceRows,
+    productionRow,
+    paidRow,
+    aged0_30,
+    aged31_60,
+    aged61_90,
+    aged90,
+    overdueLabs,
+    waitingCount,
+  ] = await Promise.all([
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM appointments WHERE substr(start_time, 1, 10) = ? AND kind = 'patient'", [today], { n: 0 }),
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM appointments WHERE substr(start_time, 1, 10) >= ? AND kind = 'patient'", [startOfWeek], { n: 0 }),
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM appointments WHERE substr(start_time, 1, 10) >= ? AND kind = 'patient'", [startOfMonth], { n: 0 }),
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM appointments WHERE substr(start_time, 1, 10) >= ? AND status = 'completed'", [startOfMonth], { n: 0 }),
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM appointments WHERE substr(start_time, 1, 10) >= ? AND status = 'no_show'", [startOfMonth], { n: 0 }),
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM appointments WHERE substr(start_time, 1, 10) >= ? AND status = 'cancelled'", [startOfMonth], { n: 0 }),
+    safeQuery<{ name: string; n: number; total: number }>(
+      `SELECT COALESCE(tt.name, 'Unspecified') as name, COUNT(*) as n, COALESCE(SUM(tt.default_fee), 0) as total
+       FROM appointments a LEFT JOIN treatment_types tt ON tt.id = a.treatment_type_id
+       WHERE substr(a.start_time, 1, 10) >= ? AND a.kind = 'patient'
+       GROUP BY tt.id ORDER BY n DESC`,
+      [startOfMonth],
+    ),
+    safeQuery<{ source: string; n: number }>(
+      `SELECT COALESCE(NULLIF(referral_source, ''), 'Unknown') as source, COUNT(*) as n
+       FROM patients GROUP BY source ORDER BY n DESC`,
+    ),
+    safeGet<{ total: number }>(
+      "SELECT COALESCE(SUM(total), 0) as total FROM invoices WHERE substr(issued_at, 1, 10) >= ? AND status != 'void'",
+      [startOfMonth], { total: 0 },
+    ),
+    safeGet<{ total: number }>(
+      "SELECT COALESCE(SUM(amount_paid), 0) as total FROM invoices WHERE substr(issued_at, 1, 10) >= ? AND status != 'void'",
+      [startOfMonth], { total: 0 },
+    ),
+    safeGet<{ total: number }>(
+      `SELECT COALESCE(SUM(total - amount_paid), 0) as total FROM invoices
+       WHERE status = 'open' AND julianday('now') - julianday(issued_at) <= 30`, [], { total: 0 },
+    ),
+    safeGet<{ total: number }>(
+      `SELECT COALESCE(SUM(total - amount_paid), 0) as total FROM invoices
+       WHERE status = 'open' AND julianday('now') - julianday(issued_at) > 30 AND julianday('now') - julianday(issued_at) <= 60`, [], { total: 0 },
+    ),
+    safeGet<{ total: number }>(
+      `SELECT COALESCE(SUM(total - amount_paid), 0) as total FROM invoices
+       WHERE status = 'open' AND julianday('now') - julianday(issued_at) > 60 AND julianday('now') - julianday(issued_at) <= 90`, [], { total: 0 },
+    ),
+    safeGet<{ total: number }>(
+      `SELECT COALESCE(SUM(total - amount_paid), 0) as total FROM invoices
+       WHERE status = 'open' AND julianday('now') - julianday(issued_at) > 90`, [], { total: 0 },
+    ),
+    safeGet<{ n: number }>(
+      `SELECT COUNT(*) as n FROM lab_cases WHERE due_at < datetime('now') AND received_at IS NULL AND status NOT IN ('cancelled', 'received', 'seated')`,
+      [], { n: 0 },
+    ),
+    safeGet<{ n: number }>("SELECT COUNT(*) as n FROM waiting_list", [], { n: 0 }),
+  ]);
+
+  return c.json({
+    today_appointments: todayAppts.n ?? 0,
+    week_appointments: weekAppts.n ?? 0,
+    month_appointments: monthAppts.n ?? 0,
+    month_completed: monthCompleted.n ?? 0,
+    month_no_shows: monthNoShows.n ?? 0,
+    month_cancelled: monthCancelled.n ?? 0,
+    month_production: productionRow.total ?? 0,
+    month_collections: paidRow.total ?? 0,
+    by_treatment: byTreatmentRows,
+    by_source: bySourceRows,
+    aged_receivables: {
+      "0-30": aged0_30.total ?? 0,
+      "31-60": aged31_60.total ?? 0,
+      "61-90": aged61_90.total ?? 0,
+      "90+": aged90.total ?? 0,
+    },
+    overdue_lab_cases: overdueLabs.n ?? 0,
+    waiting_list_count: waitingCount.n ?? 0,
+  });
+});
+
+// ── Settings (key/value) ───────────────────────────────────────────
+
+app.get("/api/settings", async (c) => {
+  const rows = await query<{ key: string; value: string }>(
+    "SELECT key, value FROM settings",
+  ).catch(() => []);
+  const out: Record<string, string> = {};
+  for (const r of rows) out[r.key] = r.value;
+  return c.json({ settings: out });
+});
+
+app.put("/api/settings", async (c) => {
+  let body: unknown;
+  try { body = await c.req.json(); } catch { return c.json({ error: "Invalid JSON" }, 400); }
+  if (!body || typeof body !== "object") return c.json({ error: "Body must be an object" }, 400);
+  const entries = Object.entries(body as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined && v !== null);
+  for (const [key, value] of entries) {
+    await run(
+      `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+      [key, String(value)],
+    );
+  }
+  const rows = await query<{ key: string; value: string }>("SELECT key, value FROM settings");
+  const out: Record<string, string> = {};
+  for (const r of rows) out[r.key] = r.value;
+  return c.json({ settings: out });
 });
 
 // ── Health ─────────────────────────────────────────────────────────

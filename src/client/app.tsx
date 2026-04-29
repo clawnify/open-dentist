@@ -6,6 +6,9 @@ import { ErrorBanner } from "./components/error-banner";
 import { AgendaPage } from "./components/agenda/agenda-page";
 import { PatientsList } from "./components/patients/patients-list";
 import { PatientPage } from "./components/patients/patient-page";
+import { ReportsPage } from "./components/reports/reports-page";
+import { LabPage } from "./components/lab/lab-page";
+import { SettingsPage } from "./components/settings/settings-page";
 
 export function App() {
   const state = useAppState();
@@ -25,9 +28,9 @@ export function App() {
               {route.name === "agenda" && <AgendaPage />}
               {route.name === "patients" && <PatientsList navigate={navigate} />}
               {route.name === "patient" && <PatientPage id={route.id} navigate={navigate} />}
-              {route.name === "settings" && (
-                <Placeholder title="Settings" message="Settings coming in phase 3." />
-              )}
+              {route.name === "reports" && <ReportsPage />}
+              {route.name === "lab" && <LabPage navigate={navigate} />}
+              {route.name === "settings" && <SettingsPage />}
               {route.name === "not-found" && (
                 <Placeholder title="Not found" message="That page doesn't exist." />
               )}

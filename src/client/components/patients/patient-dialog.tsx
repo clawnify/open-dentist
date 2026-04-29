@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/api";
 import { useApp } from "@/context";
 import type { Patient } from "@/types";
+
+const REFERRAL_SOURCES = ["Google", "Facebook", "Yelp", "Friend / family", "Insurance directory", "Walk-in", "Other"];
 
 interface Props {
   open: boolean;
@@ -25,6 +28,7 @@ export function PatientDialog({ open, onOpenChange, patient, onSaved }: Props) {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [alerts, setAlerts] = useState("");
+  const [referralSource, setReferralSource] = useState<string>("none");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -37,6 +41,7 @@ export function PatientDialog({ open, onOpenChange, patient, onSaved }: Props) {
     setPhone(patient?.phone ?? "");
     setAddress(patient?.address ?? "");
     setAlerts(patient?.medical_alerts ?? "");
+    setReferralSource(patient?.referral_source ?? "none");
     setNotes(patient?.notes ?? "");
   }, [open, patient]);
 
@@ -56,6 +61,7 @@ export function PatientDialog({ open, onOpenChange, patient, onSaved }: Props) {
         phone: phone.trim() || null,
         address: address.trim() || null,
         medical_alerts: alerts.trim() || null,
+        referral_source: referralSource === "none" ? null : referralSource,
         notes: notes.trim() || null,
       };
       const res = patient
@@ -103,6 +109,17 @@ export function PatientDialog({ open, onOpenChange, patient, onSaved }: Props) {
               onChange={(e) => setAlerts(e.target.value)}
               placeholder="e.g. allergy:penicillin, diabetes, anticoagulant"
             />
+          </Field>
+          <Field label="How did they hear about us?">
+            <Select value={referralSource} onValueChange={setReferralSource}>
+              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Unknown —</SelectItem>
+                {REFERRAL_SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Notes">
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />

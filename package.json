@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler d1 execute open-dentist-db --local --file=src/server/schema.sql && concurrently -n ui,api -c cyan,green \"vite\" \"wrangler dev --port 8787\"",
+    "dev": "pnpm db:migrate && concurrently -n ui,api -c cyan,green \"vite\" \"wrangler dev --port 8787\"",
+    "db:migrate": "wrangler d1 execute open-dentist-db --local --file=src/server/schema.sql",
     "build": "vite build",
     "typecheck": "tsc --noEmit"
   },

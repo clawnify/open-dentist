@@ -12,6 +12,7 @@ import { ToothChart } from "./tooth-chart";
 import { TreatmentPlan } from "./treatment-plan";
 import { ClinicalNotes } from "./clinical-notes";
 import { Billing } from "./billing";
+import { InsuranceTab } from "./insurance-tab";
 import { PatientDialog } from "./patient-dialog";
 
 interface Props {
@@ -110,6 +111,7 @@ export function PatientPage({ id, navigate }: Props) {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="insurance">Insurance</TabsTrigger>
             <TabsTrigger value="chart">Tooth Chart</TabsTrigger>
             <TabsTrigger value="plan">Treatment Plan</TabsTrigger>
             <TabsTrigger value="notes">Clinical Notes</TabsTrigger>
@@ -117,6 +119,9 @@ export function PatientPage({ id, navigate }: Props) {
           </TabsList>
           <TabsContent value="overview" className="mt-4">
             <PatientOverview patient={patient} />
+          </TabsContent>
+          <TabsContent value="insurance" className="mt-4">
+            <InsuranceTab patientId={patient.id} />
           </TabsContent>
           <TabsContent value="chart" className="mt-4">
             <ToothChart patientId={patient.id} />

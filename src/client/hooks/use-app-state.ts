@@ -16,6 +16,30 @@ import type {
  * types, plus the day's appointments. Per-patient detail data is fetched in the
  * patient-detail page itself to keep this hook lean.
  */
+export interface PracticeSettings {
+  day_start_minute: number;
+  day_end_minute: number;
+  slot_minutes: number;
+}
+
+const DEFAULT_SETTINGS: PracticeSettings = {
+  day_start_minute: 7 * 60,
+  day_end_minute: 19 * 60,
+  slot_minutes: 15,
+};
+
+function parseSettings(raw: Record<string, string>): PracticeSettings {
+  const num = (key: keyof PracticeSettings) => {
+    const v = parseInt(raw[key], 10);
+    return Number.isFinite(v) ? v : DEFAULT_SETTINGS[key];
+  };
+  return {
+    day_start_minute: num("day_start_minute"),
+    day_end_minute: num("day_end_minute"),
+    slot_minutes: num("slot_minutes"),
+  };
+}
+
 export function useAppState() {
   const [operatories, setOperatories] = useState<Operatory[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
@@ -23,18 +47,30 @@ export function useAppState() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [waitingList, setWaitingList] = useState<WaitingListEntry[]>([]);
   const [appointmentsToMake, setAppointmentsToMake] = useState<AppointmentToMake[]>([]);
+  const [settings, setSettings] = useState<PracticeSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refreshLookups = useCallback(async () => {
-    const [ops, prs, tts] = await Promise.all([
+    const [ops, prs, tts, st] = await Promise.all([
       api<{ operatories: Operatory[] }>("GET", "/api/operatories"),
       api<{ practitioners: Practitioner[] }>("GET", "/api/practitioners"),
       api<{ treatment_types: TreatmentType[] }>("GET", "/api/treatment-types"),
+      api<{ settings: Record<string, string> }>("GET", "/api/settings").catch(() => ({ settings: {} as Record<string, string> })),
     ]);
     setOperatories(ops.operatories);
     setPractitioners(prs.practitioners);
     setTreatmentTypes(tts.treatment_types);
+    setSettings(parseSettings(st.settings));
+  }, []);
+
+  const updateSettings = useCallback(async (patch: Partial<PracticeSettings>) => {
+    const body: Record<string, string> = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (v !== undefined) body[k] = String(v);
+    }
+    const res = await api<{ settings: Record<string, string> }>("PUT", "/api/settings", body);
+    setSettings(parseSettings(res.settings));
   }, []);
 
   const refreshDay = useCallback(async (date: string) => {
@@ -100,6 +136,7 @@ export function useAppState() {
     // data
     operatories, practitioners, treatmentTypes, appointments,
     waitingList, appointmentsToMake,
+    settings,
     loading, error,
     setError,
     // refresh
@@ -107,6 +144,7 @@ export function useAppState() {
     // mutations
     createAppointment, updateAppointment, deleteAppointment,
     searchPatients, createPatient,
+    updateSettings,
   };
 }
 

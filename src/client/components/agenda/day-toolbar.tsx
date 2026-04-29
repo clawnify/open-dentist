@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, CalendarDays, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate, toIsoDate } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ interface Props {
 
 export function DayToolbar({ date, onChange, onCreate }: Props) {
   const today = toIsoDate(new Date());
+  const isToday = date === today;
 
   const shift = (days: number) => {
     const d = new Date(`${date}T00:00:00`);
@@ -17,40 +18,60 @@ export function DayToolbar({ date, onChange, onCreate }: Props) {
     onChange(toIsoDate(d));
   };
 
-  const isToday = date === today;
-
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b bg-card px-4 py-3">
-      <div className="flex items-center gap-1">
-        <Button variant="outline" size="icon" onClick={() => shift(-1)} aria-label="Previous day">
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="icon" onClick={() => shift(1)} aria-label="Next day">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button variant={isToday ? "default" : "outline"} size="sm" onClick={() => onChange(today)} className="ml-1">
-          Today
-        </Button>
+    <div className="flex items-center gap-3 border-b bg-white px-6 py-4">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">
+          {formatDate(date, { month: "long", year: "numeric" })}
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          {formatDate(date, { weekday: "long", day: "numeric" })}
+        </p>
       </div>
 
-      <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm">
-        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+      <div className="ml-auto flex items-center gap-3">
+        {/* Prev | Today | Next pill */}
+        <div className="inline-flex items-center gap-0.5 rounded-lg border bg-background p-0.5">
+          <button
+            type="button"
+            onClick={() => shift(-1)}
+            aria-label="Previous day"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(today)}
+            className={
+              "rounded-md px-3 py-1 text-sm font-medium transition-colors " +
+              (isToday ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-accent")
+            }
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => shift(1)}
+            aria-label="Next day"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Date picker */}
         <input
           type="date"
           value={date}
           onChange={(e) => onChange(e.target.value)}
-          className="bg-transparent text-sm font-medium outline-none"
+          className="h-9 rounded-lg border bg-background px-3 text-sm font-medium outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         />
-      </div>
 
-      <div className="text-sm font-medium text-foreground">
-        {formatDate(date, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-      </div>
+        <div className="h-6 w-px bg-border" />
 
-      <div className="ml-auto">
         <Button onClick={onCreate} size="sm">
-          <Plus className="h-4 w-4" />
-          New appointment
+          <Plus className="h-4 w-4" /> Add appointment
         </Button>
       </div>
     </div>

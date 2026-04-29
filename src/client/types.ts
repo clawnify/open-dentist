@@ -40,6 +40,7 @@ export interface Patient {
   address: string | null;
   medical_alerts: string | null;
   notes: string | null;
+  referral_source: string | null;
   created_at: string;
 }
 
@@ -161,6 +162,70 @@ export interface WaitingListEntry {
   treatment_name?: string | null;
   treatment_color?: string | null;
   practitioner_name?: string | null;
+}
+
+export type InsuranceRank = "primary" | "secondary" | "tertiary";
+
+export interface InsurancePlan {
+  id: number;
+  patient_id: number;
+  rank: InsuranceRank;
+  carrier: string;
+  member_id: string | null;
+  group_id: string | null;
+  subscriber_name: string | null;
+  subscriber_dob: string | null;
+  effective_date: string | null;
+  term_date: string | null;
+  copay: number;
+  deductible_total: number;
+  deductible_used: number;
+  max_annual: number;
+  max_used: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export type LabStatus = "sent" | "in_lab" | "received" | "seated" | "cancelled";
+
+export interface LabCase {
+  id: number;
+  patient_id: number;
+  practitioner_id: number | null;
+  treatment_type_id: number | null;
+  lab_name: string;
+  case_type: string;
+  tooth: string | null;
+  shade: string | null;
+  fee: number;
+  sent_at: string | null;
+  due_at: string | null;
+  received_at: string | null;
+  seated_at: string | null;
+  status: LabStatus;
+  notes: string | null;
+  created_at: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  practitioner_name?: string | null;
+  treatment_code?: string | null;
+  treatment_name?: string | null;
+}
+
+export interface ReportsSummary {
+  today_appointments: number;
+  week_appointments: number;
+  month_appointments: number;
+  month_completed: number;
+  month_no_shows: number;
+  month_cancelled: number;
+  month_production: number;
+  month_collections: number;
+  by_treatment: { name: string; n: number; total: number }[];
+  by_source: { source: string; n: number }[];
+  aged_receivables: Record<"0-30" | "31-60" | "61-90" | "90+", number>;
+  overdue_lab_cases: number;
+  waiting_list_count: number;
 }
 
 export type ToMakeSource = "reception" | "patient" | "system";

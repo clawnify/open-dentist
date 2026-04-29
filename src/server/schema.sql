@@ -1,3 +1,15 @@
+-- ── Practice settings (key/value) ───────────────────────────────
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Defaults: day starts 07:00, ends 19:00. Stored as minutes from midnight.
+INSERT OR IGNORE INTO settings (key, value) VALUES ('day_start_minute', '420');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('day_end_minute', '1140');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('slot_minutes', '15');
+
 -- ── Operatories (treatment rooms / chairs) ──────────────────────
 CREATE TABLE IF NOT EXISTS operatories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +52,7 @@ CREATE TABLE IF NOT EXISTS patients (
   address TEXT,
   medical_alerts TEXT,                  -- comma-separated tags: 'allergy:penicillin,heart-condition'
   notes TEXT,
+  referral_source TEXT,                 -- e.g. 'Google', 'Facebook', 'Yelp', 'Friend', 'Walk-in', 'Other'
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -141,6 +154,52 @@ CREATE TABLE IF NOT EXISTS waiting_list (
   notes TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- ── Insurance plans ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS insurance_plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  rank TEXT NOT NULL DEFAULT 'primary', -- 'primary' | 'secondary' | 'tertiary'
+  carrier TEXT NOT NULL,
+  member_id TEXT,
+  group_id TEXT,
+  subscriber_name TEXT,
+  subscriber_dob TEXT,                  -- ISO 'YYYY-MM-DD'
+  effective_date TEXT,
+  term_date TEXT,
+  copay REAL NOT NULL DEFAULT 0,
+  deductible_total REAL NOT NULL DEFAULT 0,
+  deductible_used REAL NOT NULL DEFAULT 0,
+  max_annual REAL NOT NULL DEFAULT 0,
+  max_used REAL NOT NULL DEFAULT 0,
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_insurance_patient ON insurance_plans(patient_id);
+
+-- ── Lab cases (outbound lab work — crowns, dentures, aligners) ──
+CREATE TABLE IF NOT EXISTS lab_cases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  practitioner_id INTEGER REFERENCES practitioners(id) ON DELETE SET NULL,
+  treatment_type_id INTEGER REFERENCES treatment_types(id) ON DELETE SET NULL,
+  lab_name TEXT NOT NULL,
+  case_type TEXT NOT NULL,              -- e.g. 'Crown', 'Bridge', 'Denture', 'Aligner', 'Night Guard'
+  tooth TEXT,                           -- e.g. '14' or 'multiple'
+  shade TEXT,                           -- VITA shade, e.g. 'A2'
+  fee REAL NOT NULL DEFAULT 0,
+  sent_at TEXT,                         -- ISO datetime
+  due_at TEXT,                          -- promised return date
+  received_at TEXT,                     -- when it came back
+  seated_at TEXT,                       -- when it was placed in the patient
+  status TEXT NOT NULL DEFAULT 'sent',  -- 'sent' | 'in_lab' | 'received' | 'seated' | 'cancelled'
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_lab_patient ON lab_cases(patient_id);
+CREATE INDEX IF NOT EXISTS idx_lab_status ON lab_cases(status);
 
 -- ── Appointments to make (recall reminders) ────────────────────
 CREATE TABLE IF NOT EXISTS appointments_to_make (
