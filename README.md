@@ -1,8 +1,8 @@
+<img src="readme-banner.png" alt="Open Dentist preview" width="100%" />
+
 # Open Dentist
 
 Open-source dental practice management — an alternative to CareStack and Archy for solo practices, group practices, and DSOs.
-
-<img width="1717" height="991" alt="Image" src="https://github.com/user-attachments/assets/dee37adf-633e-41bd-b2de-12753c9709c5" />
 
 > Built on the [Clawnify](https://clawnify.com) template format. Deploy your own copy in minutes, customize freely, own the data.
 
