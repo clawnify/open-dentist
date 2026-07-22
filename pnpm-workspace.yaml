@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+  sharp: false
+  workerd: true
+minimumReleaseAgeExclude:
+  # First-party Clawnify packages — exempt from the new-release age gate so app
+  # builds pick up fresh versions promptly.
+  - '@clawnify/routes'
+  - '@clawnify/app'
