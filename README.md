@@ -2,6 +2,8 @@
 
 # Open Dentist
 
+[![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/open-dentist)
+
 Open-source dental practice management — an alternative to CareStack and Archy for solo practices, group practices, and DSOs.
 
 > Built on the [Clawnify](https://clawnify.com) template format. Deploy your own copy in minutes, customize freely, own the data.
