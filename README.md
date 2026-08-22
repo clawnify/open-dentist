@@ -1,6 +1,6 @@
-<img src="readme-banner.png" alt="Open Dentist preview" width="100%" />
+<img src="readme-banner.png" alt="OpenDentist preview" width="100%" />
 
-# Open Dentist
+# OpenDentist
 
 [![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/open-dentist)
 

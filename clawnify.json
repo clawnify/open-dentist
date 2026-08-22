@@ -1,7 +1,7 @@
 {
   "$schema": "https://app.clawnify.com/schema/v1/clawnify.json",
   "version": 1,
-  "name": "Open Dentist",
+  "name": "OpenDentist",
   "description": "Open-source dental practice management software — an alternative to CareStack and Archy. Multi-room agenda scheduling, patient records with tooth charting, treatment planning, clinical notes, and billing. Built for solo practices, group practices, and DSOs.",
   "icon": "icon.svg",
   "tags": ["dental", "healthcare", "practice-management", "scheduling", "patients"],
