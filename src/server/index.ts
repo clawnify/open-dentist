@@ -6,7 +6,7 @@ import { query, get, run } from "./db";
 type Env = { Bindings: { DB: D1Database } };
 
 const app = createApp<Env>({
-  title: "Open Dentist",
+  title: "OpenDentist",
   version: "1.0.0",
   description: "Dental practice management: patients, appointments, operatories, treatments, and billing.",
 });

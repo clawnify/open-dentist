@@ -1,5 +1,5 @@
 {
-  "name": "Open Dentist",
+  "name": "OpenDentist",
   "description": "Open-source dental practice management — multi-room agenda scheduling, patient records with tooth charting, treatment planning, clinical notes, and billing. An alternative to CareStack and Archy for solo practices, group practices, and DSOs.",
   "framework": "react+hono",
   "files": [
